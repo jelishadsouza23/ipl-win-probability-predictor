@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL Win Matrix - Live Win Probability Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-card: rgba(18, 26, 44, 0.75);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f0f4f8;
+      --text-muted: #8a99ad;
+      --text-accent: #00f0ff;
+      --gradient-neon: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+      --gradient-gold: linear-gradient(135deg, #fce043 0%, #fb7ba2 100%);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(at 10% 20%, rgba(0, 240, 255, 0.08) 0px, transparent 50%),
+        radial-gradient(at 90% 80%, rgba(112, 0, 255, 0.08) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-heading);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-logo {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--gradient-neon); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+
+    .nav-tabs { display: flex; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 12px; }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-heading); transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--gradient-neon); color: #fff; box-shadow: 0 4px 15px rgba(0,240,255,0.3);
+    }
+
+    main { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+    .grid-container {
+      display: grid; grid-template-columns: 1fr 1.1fr; gap: 2rem; align-items: start;
+    }
+
+    .glass-card {
+      background: var(--bg-card); backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      padding: 2rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-input {
+      background: rgba(10, 15, 28, 0.8); border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff; border-radius: var(--radius-md); padding: 0.75rem 1rem;
+      font-family: var(--font-heading); font-size: 0.95rem; width: 100%; outline: none;
+    }
+
+    .glass-input:focus { border-color: var(--text-accent); box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.2); }
+
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; }
+
+    .slider-row {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; background: rgba(255, 255, 255, 0.1);
+      height: 6px; border-radius: 3px; outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--text-accent); cursor: pointer; box-shadow: 0 0 10px var(--text-accent);
+    }
+
+    /* Broadcast Gauge */
+    .teams-vs-box {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin-bottom: 1.5rem;
+    }
+
+    .team-prob-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 1.25rem; text-align: center;
+    }
+
+    .prob-val { font-size: 2.8rem; font-weight: 900; font-family: var(--font-mono); }
+
+    .split-bar-container {
+      height: 22px; border-radius: 11px; overflow: hidden; display: flex; background: #111;
+      border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1.5rem;
+    }
+    .bar-chase { height: 100%; background: linear-gradient(90deg, #00f0ff, #7000ff); transition: width 0.4s; }
+    .bar-defend { height: 100%; background: linear-gradient(90deg, #ff2a4b, #ff7000); transition: width 0.4s; }
+
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px; padding: 0.85rem; text-align: center;
+    }
+    .metric-card span { display: block; font-size: 0.7rem; color: var(--text-muted); }
+    .metric-card div { font-size: 1.3rem; font-weight: 800; font-family: var(--font-mono); }
+
+    .bonus-card {
+      background: linear-gradient(135deg, rgba(252, 224, 67, 0.08) 0%, rgba(251, 123, 162, 0.08) 100%);
+      border: 1px solid rgba(252, 224, 67, 0.3); border-radius: 12px; padding: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .btn-action {
+      background: var(--gradient-neon); color: #fff; font-weight: 700; border: none;
+      border-radius: var(--radius-md); padding: 0.75rem 1.5rem; cursor: pointer;
+      font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo">🏏</div>
+      <div>
+        <h1 style="font-size: 1.3rem; font-weight: 800;">IPL <span style="color: var(--text-accent);">WIN MATRIX</span></h1>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">AI Live Match Probability & Score Predictor</p>
+      </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tabLive" onclick="switchTab('live')">⚡ Live Predictor</button>
+      <button class="tab-btn" id="tabSim" onclick="switchTab('sim')">📺 Replay Simulator</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LIVE PREDICTOR VIEW -->
+    <div id="viewLive" class="grid-container">
+      <div class="glass-card">
+        <h3 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 1.25rem; color: var(--text-accent);">
+          🎛️ MATCH SITUATION INPUTS
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;" class="form-group">
+          <div>
+            <label class="form-label">Batting Team (Chasing)</label>
+            <select id="battingTeam" class="glass-input" onchange="triggerPredict()"></select>
+          </div>
+          <div>
+            <label class="form-label">Bowling Team (Defending)</label>
+            <select id="bowlingTeam" class="glass-input" onchange="triggerPredict()"></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Stadium / Venue</label>
+          <select id="venueSelect" class="glass-input" onchange="triggerPredict()"></select>
+        </div>
+
+        <div class="form-group">
+          <div class="slider-row">
+            <span class="form-label">Target Score (1st Innings Total + 1)</span>
+            <span style="font-weight: 800; color: var(--text-accent);" id="lblTarget">175</span>
+          </div>
+          <input type="range" id="rngTarget" min="60" max="250" value="175" oninput="lblTarget.innerText=this.value; triggerPredict();">
+        </div>
+
+        <div class="form-group">
+          <div class="slider-row">
+            <span class="form-label">Current Score</span>
+            <span style="font-weight: 800;" id="lblScore">124</span>
+          </div>
+          <input type="range" id="rngScore" min="0" max="250" value="124" oninput="lblScore.innerText=this.value; triggerPredict();">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <div class="slider-row">
+              <span class="form-label">Overs Completed</span>
+              <span style="font-weight: 800;" id="lblOvers">13.4</span>
+            </div>
+            <input type="range" id="rngOvers" min="0.1" max="19.5" step="0.1" value="13.4" oninput="lblOvers.innerText=this.value; triggerPredict();">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-row">
+              <span class="form-label">Wickets Fallen</span>
+              <span style="font-weight: 800; color: #ff2a4b;" id="lblWickets">3</span>
+            </div>
+            <input type="range" id="rngWickets" min="0" max="9" value="3" oninput="lblWickets.innerText=this.value; triggerPredict();">
+          </div>
+        </div>
+      </div>
+
+      <!-- BROADCAST WIN PROBABILITY DISPLAY -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">
+            LIVE WIN PROBABILITY
+          </h3>
+          <span style="font-size: 0.8rem; font-weight: 700; background: rgba(0,240,255,0.1); color: var(--text-accent); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(0,240,255,0.3);" id="lblH2H">
+            H2H Win Rate: 55%
+          </span>
+        </div>
+
+        <div class="teams-vs-box">
+          <div class="team-prob-card" style="border-color: rgba(0, 240, 255, 0.4);">
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="txtBattingTeamName">CHASING</span>
+            <div class="prob-val" style="color: #00f0ff;" id="valChaseProb">65.5%</div>
+          </div>
+          <div style="font-weight: 800; color: var(--text-muted);">VS</div>
+          <div class="team-prob-card" style="border-color: rgba(255, 42, 75, 0.4);">
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="txtBowlingTeamName">DEFENDING</span>
+            <div class="prob-val" style="color: #ff2a4b;" id="valDefendProb">34.5%</div>
+          </div>
+        </div>
+
+        <div class="split-bar-container">
+          <div class="bar-chase" id="barChase" style="width: 65.5%;"></div>
+          <div class="bar-defend" id="barDefend" style="width: 34.5%;"></div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span>RUNS NEEDED</span>
+            <div id="valRunsLeft">51</div>
+          </div>
+          <div class="metric-card">
+            <span>BALLS LEFT</span>
+            <div id="valBallsLeft">38</div>
+          </div>
+          <div class="metric-card">
+            <span>CRR</span>
+            <div id="valCRR">9.07</div>
+          </div>
+          <div class="metric-card">
+            <span>RRR</span>
+            <div id="valRRR" style="color: #00f0ff;">8.05</div>
+          </div>
+        </div>
+
+        <!-- 1st Innings Projection Card -->
+        <div class="bonus-card">
+          <div>
+            <span style="font-size: 0.75rem; color: #ffcc00; font-weight: 700;">🎯 1ST INNINGS SCORE PROJECTION MODEL</span>
+            <div style="font-size: 1.1rem; font-weight: 800;" id="valProjScore">Projected Target: 178 Runs</div>
+          </div>
+          <span style="font-size: 0.8rem; color: var(--text-muted);" id="valProjRange">Range: 166 - 192</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPLAY SIMULATOR VIEW -->
+    <div id="viewSim" class="glass-card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3>📺 HISTORICAL MATCH REPLAY SIMULATOR</h3>
+        <select id="simMatchSelect" class="glass-input" style="width: auto;" onchange="loadSimMatch()"></select>
+      </div>
+
+      <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+        <button class="btn-action" id="btnSimPlay" onclick="togglePlaySim()">▶ Play Replay</button>
+        <button class="tab-btn" onclick="resetSim()">🔄 Reset</button>
+        <input type="range" id="simProgress" min="0" value="0" style="flex:1;" oninput="scrubSim(this.value)">
+        <span id="txtSimBallCount" style="font-family: var(--font-mono);">Ball 0/0</span>
+      </div>
+
+      <div style="height: 300px; width: 100%;">
+        <canvas id="simChart"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let metaData = null;
+    let simData = null;
+    let simIndex = 0;
+    let simTimer = null;
+    let chartInstance = null;
+
+    async function initApp() {
+      try {
+        const res = await fetch('/api/metadata');
+        metaData = await res.json();
+        
+        const bSelect = document.getElementById('battingTeam');
+        const wSelect = document.getElementById('bowlingTeam');
+        const vSelect = document.getElementById('venueSelect');
+
+        metaData.teams.forEach((t, idx) => {
+          bSelect.add(new Option(t.name, t.name, false, idx === 0));
+          wSelect.add(new Option(t.name, t.name, false, idx === 1));
+        });
+
+        metaData.venues.forEach((v) => {
+          vSelect.add(new Option(v.name, v.name));
+        });
+
+        triggerPredict();
+        loadSampleMatches();
+      } catch (err) {
+        console.error("Init Error:", err);
+      }
+    }
+
+    async function triggerPredict() {
+      const payload = {
+        batting_team: document.getElementById('battingTeam').value,
+        bowling_team: document.getElementById('bowlingTeam').value,
+        venue: document.getElementById('venueSelect').value,
+        target_runs: parseInt(document.getElementById('rngTarget').value),
+        current_score: parseInt(document.getElementById('rngScore').value),
+        overs_completed: parseFloat(document.getElementById('rngOvers').value),
+        wickets_fallen: parseInt(document.getElementById('rngWickets').value)
+      };
+
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        document.getElementById('txtBattingTeamName').innerText = data.batting_team.toUpperCase();
+        document.getElementById('txtBowlingTeamName').innerText = data.bowling_team.toUpperCase();
+        document.getElementById('valChaseProb').innerText = data.chasing_team_win_prob + '%';
+        document.getElementById('valDefendProb').innerText = data.defending_team_win_prob + '%';
+
+        document.getElementById('barChase').style.width = data.chasing_team_win_prob + '%';
+        document.getElementById('barDefend').style.width = data.defending_team_win_prob + '%';
+
+        document.getElementById('valRunsLeft').innerText = data.runs_left;
+        document.getElementById('valBallsLeft').innerText = data.balls_left;
+        document.getElementById('valCRR').innerText = data.crr;
+        document.getElementById('valRRR').innerText = data.rrr;
+
+        if (data.h2h_win_pct) {
+          document.getElementById('lblH2H').innerText = `H2H Win Rate: ${data.h2h_win_pct}%`;
+        }
+
+        if (data.projected_1st_innings) {
+          document.getElementById('valProjScore').innerText = `Projected Target: ${data.projected_1st_innings.projected_score} Runs`;
+          document.getElementById('valProjRange').innerText = `Range: ${data.projected_1st_innings.range_min} - ${data.projected_1st_innings.range_max}`;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tabLive').classList.toggle('active', tab === 'live');
+      document.getElementById('tabSim').classList.toggle('active', tab === 'sim');
+      document.getElementById('viewLive').style.display = tab === 'live' ? 'grid' : 'none';
+      document.getElementById('viewSim').style.display = tab === 'sim' ? 'block' : 'none';
+    }
+
+    async function loadSampleMatches() {
+      const res = await fetch('/api/sample-matches');
+      const matches = await res.json();
+      const sSelect = document.getElementById('simMatchSelect');
+      sSelect.innerHTML = '';
+      matches.forEach(m => sSelect.add(new Option(m.title, m.id)));
+      loadSimMatch();
+    }
+
+    async function loadSimMatch() {
+      const matchId = document.getElementById('simMatchSelect').value;
+      const res = await fetch('/api/simulate-match/' + matchId);
+      simData = await res.json();
+      simIndex = 0;
+      document.getElementById('simProgress').max = simData.ball_by_ball.length - 1;
+      document.getElementById('simProgress').value = 0;
+      renderChart();
+    }
+
+    function renderChart() {
+      if (!simData) return;
+      const ctx = document.getElementById('simChart').getContext('2d');
+      const sliced = simData.ball_by_ball.slice(0, simIndex + 1);
+      
+      const labels = sliced.map(b => b.overs_completed);
+      const dataset = sliced.map(b => b.chasing_win_prob);
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Chasing Win Probability (%)',
+            data: dataset,
+            borderColor: '#00f0ff',
+            backgroundColor: 'rgba(0, 240, 255, 0.1)',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+
+      document.getElementById('txtSimBallCount').innerText = `Ball ${simIndex + 1} / ${simData.ball_by_ball.length}`;
+    }
+
+    function togglePlaySim() {
+      const btn = document.getElementById('btnSimPlay');
+      if (simTimer) {
+        clearInterval(simTimer);
+        simTimer = null;
+        btn.innerText = '▶ Play Replay';
+      } else {
+        btn.innerText = '⏸ Pause Replay';
+        simTimer = setInterval(() => {
+          if (simIndex < simData.ball_by_ball.length - 1) {
+            simIndex++;
+            document.getElementById('simProgress').value = simIndex;
+            renderChart();
+          } else {
+            clearInterval(simTimer);
+            simTimer = null;
+            btn.innerText = '▶ Play Replay';
+          }
+        }, 300);
+      }
+    }
+
+    function resetSim() {
+      if (simTimer) clearInterval(simTimer);
+      simTimer = null;
+      document.getElementById('btnSimPlay').innerText = '▶ Play Replay';
+      simIndex = 0;
+      document.getElementById('simProgress').value = 0;
+      renderChart();
+    }
+
+    function scrubSim(val) {
+      simIndex = parseInt(val);
+      renderChart();
+    }
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
