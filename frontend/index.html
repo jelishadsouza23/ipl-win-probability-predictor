@@ -1,17 +1,493 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏏</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IPL Live Win Probability Predictor</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="en" class="bg-[#0e0f14]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse Cricket Analytics | IPL Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ground: #0e0f14;
+      --tile-base: #16181f;
+      --tile-hero: #1b1e27;
+      --border: #262a35;
+      --fuchsia: #ec4899;
+      --fuchsia-deep: #db2777;
+      --teal: #2dd4bf;
+      --amber: #f5b544;
+      --violet: #8b7cff;
+      --bone: #f2f3f7;
+      --grey: #a6abb8;
+      --muted: #6b7180;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      color: var(--bone);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .bento-tile {
+      background: var(--tile-base);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      box-shadow: 0 12px 30px -14px rgba(0,0,0,0.7), 0 22px 50px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+      transition: all 0.4s cubic-bezier(.34,1.4,.64,1);
+    }
+
+    .bento-tile:hover {
+      transform: translateY(-4px);
+      border-color: rgba(236, 72, 153, 0.3);
+    }
+
+    .bento-hero {
+      background: var(--tile-hero);
+    }
+
+    .eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .gauge-ring {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    .nav-link {
+      color: var(--grey);
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--bone);
+    }
+
+    .active-pill {
+      background: rgba(236, 72, 153, 0.1);
+      border: 1px solid rgba(236, 72, 153, 0.2);
+      color: var(--fuchsia);
+    }
+
+    .spark-line {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: draw 2s forwards ease-out;
+    }
+
+    @keyframes draw {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .pulse-dot {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    .col-span-1 { grid-column: span 1 / span 1; }
+    .col-span-2 { grid-column: span 2 / span 2; }
+    .col-span-3 { grid-column: span 3 / span 3; }
+    .row-span-1 { grid-row: span 1 / span 1; }
+    .row-span-2 { grid-row: span 2 / span 2; }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen bg-[#0e0f14] pb-12">
+    
+    <!-- Top App Bar -->
+    <nav class="sticky top-0 z-50 bg-[#0e0f14]/85 backdrop-blur-md border-b border-[#262a35] h-16">
+      <div class="max-w-[1320px] mx-auto px-6 h-full flex items-center justify-between">
+        <div class="flex items-center gap-8">
+          <a href="#" id="brand-link" class="flex items-center gap-3 group">
+            <div class="w-8 h-8 rounded-lg bg-[#ec4899] flex items-center justify-center shadow-lg shadow-fuchsia-500/20">
+              <iconify-icon icon="lucide:activity" class="text-white text-lg"></iconify-icon>
+            </div>
+            <span class="font-extrabold text-xl tracking-tighter text-[#f2f3f7]">PULSE</span>
+          </a>
+          
+          <div class="hidden md:flex items-center gap-1">
+            <a href="#" id="nav-overview" class="px-4 py-1.5 rounded-full text-sm font-semibold active-pill">Overview</a>
+            <a href="#" id="nav-teams" class="px-4 py-1.5 rounded-full text-sm font-semibold nav-link">Teams</a>
+            <a href="#" id="nav-venues" class="px-4 py-1.5 rounded-full text-sm font-semibold nav-link">Venues</a>
+            <a href="#" id="nav-predictions" class="px-4 py-1.5 rounded-full text-sm font-semibold nav-link">Predictions</a>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <div class="hidden lg:flex items-center bg-[#16181f] border border-[#262a35] rounded-full px-3 py-1.5 w-48">
+            <iconify-icon icon="lucide:search" class="text-[#6b7180] mr-2"></iconify-icon>
+            <input type="text" placeholder="Search..." class="bg-transparent border-none text-xs text-[#f2f3f7] focus:outline-none w-full">
+            <span class="text-[10px] text-[#6b7180] mono">/</span>
+          </div>
+          
+          <div class="flex items-center gap-2 bg-[#16181f] border border-[#262a35] px-3 py-1.5 rounded-full">
+            <iconify-icon icon="lucide:radio" class="text-fuchsia-500 text-sm pulse-dot"></iconify-icon>
+            <span class="text-xs font-semibold text-[#f2f3f7]">Live Match</span>
+            <iconify-icon icon="lucide:chevron-down" class="text-[#6b7180] text-xs"></iconify-icon>
+          </div>
+
+          <button id="notif-btn" class="relative w-9 h-9 flex items-center justify-center rounded-full border border-[#262a35] hover:bg-[#262a35] transition-colors">
+            <iconify-icon icon="lucide:bell" class="text-[#a6abb8]"></iconify-icon>
+            <span class="absolute top-2 right-2.5 w-2 h-2 bg-[#ec4899] border-2 border-[#0e0f14] rounded-full"></span>
+          </button>
+          
+          <div class="w-9 h-9 rounded-full bg-[#8b7cff] flex items-center justify-center text-xs font-bold text-white shadow-lg border border-[#262a35]">TV</div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="max-w-[1320px] mx-auto px-6 py-10">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 class="text-4xl font-extrabold tracking-tight text-[#f2f3f7]">IPL Live</h1>
+          <p class="eyebrow mt-2 text-[#6b7180]">PRODUCT ANALYTICS - UPDATED 4 MIN AGO</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex p-1 bg-[#16181f] border border-[#262a35] rounded-xl">
+            <button class="px-4 py-1.5 text-xs font-bold text-[#a6abb8] hover:text-[#f2f3f7] transition-colors">DAY</button>
+            <button class="px-4 py-1.5 text-xs font-bold bg-[#262a35] text-[#f2f3f7] rounded-lg shadow-sm">LIVE</button>
+            <button class="px-4 py-1.5 text-xs font-bold text-[#a6abb8] hover:text-[#f2f3f7] transition-colors">MONTH</button>
+          </div>
+          <button id="export-btn" class="px-5 py-2.5 bg-transparent border border-[#262a35] rounded-xl text-sm font-bold text-[#a6abb8] hover:bg-[#16181f] transition-all flex items-center gap-2">
+            <iconify-icon icon="lucide:download"></iconify-icon>
+            Export
+          </button>
+          <button id="new-analysis-btn" class="px-5 py-2.5 bg-[#ec4899] hover:bg-[#db2777] rounded-xl text-sm font-bold text-white shadow-lg shadow-fuchsia-500/20 transition-all flex items-center gap-2">
+            <iconify-icon icon="lucide:plus"></iconify-icon>
+            New Analysis
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Bento Mosaic Grid -->
+    <main class="max-w-[1320px] mx-auto px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[18px]">
+        
+        <!-- 1. Win Probability Gauge Hero (2x2) -->
+        <section class="bento-tile bento-hero col-span-1 md:col-span-2 row-span-2 p-8 flex flex-col">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <p class="eyebrow">WIN PROBABILITY</p>
+              <h2 class="text-2xl font-bold mt-1">Mumbai vs Delhi</h2>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] font-bold mono border border-green-500/20 tracking-wider">LIVE PREDICTION</span>
+              <span class="text-[10px] text-[#6b7180] mono mt-1">Updated 15s ago</span>
+            </div>
+          </div>
+
+          <div class="flex-1 flex flex-col items-center justify-center py-6">
+            <div class="relative">
+              <svg width="240" height="240" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#262a35" stroke-width="8"></circle>
+                <!-- Delhi Arc (38%) -->
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#2dd4bf" stroke-width="8" stroke-dasharray="263.89" stroke-dashoffset="163.6" class="gauge-ring"></circle>
+                <!-- Mumbai Arc (62%) -->
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#ec4899" stroke-width="8" stroke-dasharray="263.89" stroke-dashoffset="100.27" class="gauge-ring" style="stroke-dashoffset: 100;"></circle>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-5xl font-extrabold tracking-tighter mono">62%</span>
+                <span class="text-[10px] font-bold text-[#ec4899] eyebrow tracking-widest mt-1">MUMBAI WIN</span>
+              </div>
+            </div>
+
+            <!-- Probability Split Bar -->
+            <div class="w-full max-w-md mt-12">
+              <div class="flex justify-between text-[11px] mono mb-2 uppercase">
+                <span class="text-[#ec4899]">MI: 62%</span>
+                <span class="text-[#2dd4bf]">DC: 38%</span>
+              </div>
+              <div class="h-2 w-full bg-[#262a35] rounded-full overflow-hidden flex">
+                <div class="h-full bg-[#ec4899]" style="width: 62%"></div>
+                <div class="h-full bg-[#2dd4bf]" style="width: 38%"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Live Match Summary (1x2 tall) -->
+        <aside class="bento-tile col-span-1 row-span-2 p-6 flex flex-col">
+          <div class="flex items-center gap-2 mb-6">
+            <p class="eyebrow">LIVE MATCH</p>
+            <span class="w-1.5 h-1.5 rounded-full bg-green-500 pulse-dot"></span>
+          </div>
+          
+          <div class="space-y-6 flex-1">
+            <div class="flex justify-between items-end border-b border-[#262a35] pb-4">
+              <div>
+                <p class="text-[10px] text-[#6b7180] mono uppercase">CURRENT SCORE</p>
+                <p class="text-2xl font-extrabold mono">142/4</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] text-[#6b7180] mono uppercase">TARGET</p>
+                <p class="text-lg font-bold mono text-[#f2f3f7]">185</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-[10px] text-[#6b7180] mono uppercase">OVERS</p>
+                <p class="text-lg font-bold mono">12.3/20</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-[#6b7180] mono uppercase">WICKETS LEFT</p>
+                <p class="text-lg font-bold mono">6</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-[10px] text-[#6b7180] mono uppercase">RUNS LEFT</p>
+                <p class="text-lg font-bold mono text-[#ec4899]">43</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-[#6b7180] mono uppercase">BALLS LEFT</p>
+                <p class="text-lg font-bold mono">45</p>
+              </div>
+            </div>
+
+            <div class="space-y-4 pt-2">
+              <div class="flex justify-between items-center">
+                <span class="text-[11px] font-bold text-[#6b7180] uppercase tracking-wide">CRR (Current)</span>
+                <span class="mono text-[#f2f3f7]">11.6</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-[11px] font-bold text-[#6b7180] uppercase tracking-wide">RRR (Required)</span>
+                <span class="mono text-[#f2f3f7]">8.4</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-auto pt-6">
+            <div class="w-full py-2 bg-[#f5b544]/10 border border-[#f5b544]/20 rounded-lg text-center">
+              <span class="text-[10px] font-extrabold text-[#f5b544] tracking-[0.2em] uppercase">DEATH OVERS</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 3. Pressure Meter (1x1) -->
+        <section class="bento-tile col-span-1 p-6">
+          <p class="eyebrow">PRESSURE LEVEL</p>
+          <div class="flex flex-col items-center mt-4">
+            <div class="relative w-full h-16 bg-[#262a35] rounded-xl overflow-hidden">
+              <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 via-amber-400 to-[#ec4899] opacity-90" style="width: 73%"></div>
+              <div class="absolute inset-0 flex items-center justify-between px-4 z-10">
+                <span class="text-xs font-bold mono text-[#0e0f14]">73%</span>
+                <span class="text-xs font-bold tracking-widest text-[#0e0f14]">HIGH</span>
+              </div>
+            </div>
+            <p class="text-xs text-[#a6abb8] mt-4 text-center leading-relaxed">
+              Pressure mounting as required run rate increases.
+            </p>
+          </div>
+        </section>
+
+        <!-- 4. Batting Team Stats (1x1) -->
+        <section class="bento-tile col-span-1 p-6">
+          <p class="eyebrow mb-4">BATTING TEAM</p>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs">MI</div>
+            <div>
+              <p class="font-bold">Mumbai Indians</p>
+              <div class="flex gap-1 mt-1">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[#6b7180]">Win Rate</span>
+              <span class="mono">68%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#6b7180]">Best Batsman</span>
+              <span class="mono text-[#ec4899]">T. Varma (28*)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Bowling Team Stats (1x1) -->
+        <section class="bento-tile col-span-1 p-6">
+          <p class="eyebrow mb-4">BOWLING TEAM</p>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-bold text-xs">DC</div>
+            <div>
+              <p class="font-bold">Delhi Capitals</p>
+              <div class="flex gap-1 mt-1">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[#6b7180]">Eco Rate</span>
+              <span class="mono">7.2</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#6b7180]">Best Bowler</span>
+              <span class="mono text-[#2dd4bf]">A. Patel (2/24)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. Venue Stats (1x1) -->
+        <section class="bento-tile col-span-1 p-6">
+          <p class="eyebrow mb-4">VENUE STATS</p>
+          <h4 class="font-bold text-sm mb-3">Arun Jaitley Stadium</h4>
+          <div class="space-y-2.5">
+            <div class="flex justify-between text-xs">
+              <span class="text-[#6b7180]">Avg 1st Inn</span>
+              <span class="mono">165</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-[#6b7180]">Chase Success</span>
+              <span class="mono">58%</span>
+            </div>
+            <div class="pt-2 border-t border-[#262a35] mt-1">
+              <span class="text-[10px] text-[#6b7180] block">PITCH REPORT</span>
+              <span class="text-xs font-bold text-[#f5b544]">Balanced Deck</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. AI Insights Card (2x1 wide) -->
+        <section class="bento-tile col-span-1 md:col-span-2 p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <p class="eyebrow">AI INSIGHTS</p>
+            <span class="px-2 py-0.5 rounded-md bg-[#8b7cff]/10 text-[#8b7cff] text-[9px] font-bold border border-[#8b7cff]/20">MODEL V4.2</span>
+          </div>
+          <p class="text-[#a6abb8] text-sm leading-relaxed">
+            Mumbai is on pace for 168 runs, 17 short of the target. With 6 wickets down and 45 balls remaining, they need 8.4 runs per over. <span class="text-[#f2f3f7] font-medium">High pressure mounting as death overs approach.</span> Current probability favors Delhi at 62% based on recent form and pitch conditions.
+          </p>
+        </section>
+
+        <!-- 8. Prediction Confidence (1x1) -->
+        <section class="bento-tile col-span-1 p-6 flex flex-col">
+          <p class="eyebrow">MODEL CONFIDENCE</p>
+          <div class="flex-1 flex flex-col justify-center gap-4">
+            <div class="flex justify-between items-baseline">
+              <span class="text-4xl font-extrabold mono">94%</span>
+              <span class="text-[10px] font-bold text-green-400">EXCELLENT</span>
+            </div>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center text-[10px] mono text-[#6b7180]">
+                <span>LAST UPDATE</span>
+                <span>5s AGO</span>
+              </div>
+              <div class="flex justify-between items-center text-[10px] mono text-[#6b7180]">
+                <span>API STATUS</span>
+                <span class="flex items-center gap-1.5 text-green-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                  CONNECTED
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. Win Probability Timeline (3x1 wide) -->
+        <section class="bento-tile col-span-1 md:col-span-3 lg:col-span-3 p-6 min-h-[320px] flex flex-col">
+          <div class="flex justify-between items-center mb-8">
+            <p class="eyebrow">PROBABILITY TIMELINE</p>
+            <div class="flex gap-4">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-0.5 bg-[#ec4899]"></span>
+                <span class="text-[10px] mono text-[#a6abb8]">MUMBAI</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-0.5 bg-[#2dd4bf]"></span>
+                <span class="text-[10px] mono text-[#a6abb8]">DELHI</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex-1 relative pb-6 px-2">
+            <!-- Chart Axis -->
+            <div class="absolute left-0 top-0 bottom-6 w-px bg-[#262a35]"></div>
+            <div class="absolute left-0 right-0 bottom-6 h-px bg-[#262a35]"></div>
+            
+            <!-- Grid Lines -->
+            <div class="absolute w-full h-px top-1/4 bg-[#262a35]/30"></div>
+            <div class="absolute w-full h-px top-2/4 bg-[#262a35]/30"></div>
+            <div class="absolute w-full h-px top-3/4 bg-[#262a35]/30"></div>
+
+            <!-- SVG Line Chart -->
+            <svg class="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+              <!-- Batting Team (Fuchsia) -->
+              <path d="M0,100 C100,80 200,60 300,90 C400,120 500,40 600,60 C700,80 800,140 900,120 L1000,140" fill="none" stroke="#ec4899" stroke-width="2" class="spark-line"></path>
+              
+              <!-- Bowling Team (Teal) -->
+              <path d="M0,100 C100,120 200,140 300,110 C400,80 500,160 600,140 C700,120 800,60 900,80 L1000,60" fill="none" stroke="#2dd4bf" stroke-width="2" class="spark-line"></path>
+              
+              <!-- Event Markers -->
+              <circle cx="300" cy="90" r="3" fill="#ec4899"></circle>
+              <circle cx="500" cy="40" r="3" fill="#ec4899"></circle>
+              <path d="M597,57 L603,63 M603,57 L597,63" stroke="white" stroke-width="1"></path>
+              <path d="M797,137 L803,143 M803,137 L797,143" stroke="white" stroke-width="1"></path>
+            </svg>
+            
+            <!-- Labels -->
+            <div class="absolute left-0 bottom-0 right-0 flex justify-between px-2 pt-2">
+              <span class="text-[9px] mono text-[#6b7180]">OVER 1</span>
+              <span class="text-[9px] mono text-[#6b7180]">OVER 5</span>
+              <span class="text-[9px] mono text-[#6b7180]">OVER 10</span>
+              <span class="text-[9px] mono text-[#6b7180]">OVER 15</span>
+              <span class="text-[9px] mono text-[#6b7180]">OVER 20</span>
+            </div>
+
+            <div class="absolute -left-6 top-0 bottom-6 flex flex-col justify-between items-end text-[9px] mono text-[#6b7180] py-0">
+              <span>100%</span>
+              <span>50%</span>
+              <span>0%</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+</body>
 </html>
